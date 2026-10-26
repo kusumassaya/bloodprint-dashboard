@@ -1,0 +1,839 @@
+<!DOCTYPE html>
+<html lang="id">
+
+<head>
+
+    <meta charset="UTF-8">
+
+    <meta
+        name="viewport"
+        content="width=device-width, initial-scale=1.0"
+    >
+
+    <title>
+        BLOODPRINT - Sistem Identifikasi Golongan Darah
+    </title>
+
+    <link
+        rel="stylesheet"
+        href="style.css"
+    >
+
+</head>
+
+
+<body>
+
+    <main class="dashboard">
+
+
+        <!-- =====================================================
+             HEADER
+        ====================================================== -->
+
+        <header class="header">
+
+
+            <!-- BRAND -->
+
+            <div class="header-left">
+
+                <div class="blood-logo">
+                    <span></span>
+                </div>
+
+
+                <div class="brand">
+
+                    <h1>
+                        BLOOD<span>PRINT</span>
+                    </h1>
+
+                    <p>
+                        SISTEM IDENTIFIKASI GOLONGAN DARAH
+                    </p>
+
+                </div>
+
+            </div>
+
+
+
+            <!-- HEARTBEAT DECORATION -->
+
+            <div class="heartbeat">
+
+                <span></span>
+                <span></span>
+                <span></span>
+
+            </div>
+
+
+
+            <!-- DATE & TIME -->
+
+            <div class="datetime">
+
+
+                <!-- TANGGAL -->
+
+                <div class="date-box">
+
+                    <div class="date-icon">
+                        ▣
+                    </div>
+
+                    <div>
+
+                        <strong id="date">
+                            24 September 2026
+                        </strong>
+
+                    </div>
+
+                </div>
+
+
+
+                <div class="date-divider"></div>
+
+
+
+                <!-- JAM -->
+
+                <div class="time-box">
+
+                    <div class="clock-icon">
+                        ◷
+                    </div>
+
+                    <strong id="time">
+                        22:15:43
+                    </strong>
+
+                </div>
+
+
+            </div>
+
+
+        </header>
+
+
+
+        <!-- =====================================================
+             TOP SECTION
+        ====================================================== -->
+
+        <section class="top-section">
+
+
+            <!-- =================================================
+                 DATA PASIEN
+            ================================================== -->
+
+            <div class="card patient-card">
+
+
+                <!-- JUDUL DATA PASIEN -->
+
+                <div class="card-title">
+
+
+                    <!-- ICON PASIEN -->
+
+                    <div class="title-icon patient-icon">
+
+                        <div class="person-head"></div>
+
+                        <div class="person-body"></div>
+
+                    </div>
+
+
+
+                    <div>
+
+                        <h2>
+                            DATA PASIEN
+                        </h2>
+
+                        <p>
+                            Masukkan data pasien untuk memulai identifikasi
+                        </p>
+
+                    </div>
+
+
+                </div>
+
+
+
+                <!-- FORM PASIEN -->
+
+                <div class="patient-form">
+
+
+                    <!-- ID PASIEN -->
+
+                    <div class="input-group">
+
+                        <label>
+                            ID PASIEN
+                        </label>
+
+
+                        <div class="input-wrapper">
+
+                            <span class="input-icon">
+                                ♙
+                            </span>
+
+
+                            <input
+                                id="patientId"
+                                type="text"
+                                placeholder="Masukkan ID Pasien"
+                            >
+
+                        </div>
+
+                    </div>
+
+
+
+                    <!-- NAMA PASIEN -->
+
+                    <div class="input-group">
+
+                        <label>
+                            NAMA PASIEN
+                        </label>
+
+
+                        <div class="input-wrapper">
+
+                            <span class="input-icon">
+                                ♙
+                            </span>
+
+
+                            <input
+                                id="patientName"
+                                type="text"
+                                placeholder="Masukkan Nama Pasien"
+                            >
+
+                        </div>
+
+                    </div>
+
+
+                </div>
+
+
+
+                <!-- TOMBOL MULAI SCAN -->
+
+                <button
+                    id="scanBtn"
+                    class="scan-btn"
+                >
+
+                    <span class="scan-icon">
+                        ◎
+                    </span>
+
+
+                    <span>
+                        MULAI SCAN
+                    </span>
+
+                </button>
+
+
+            </div>
+
+
+
+            <!-- =================================================
+                 HASIL IDENTIFIKASI
+            ================================================== -->
+
+            <div class="card result-card">
+
+
+                <!-- JUDUL HASIL -->
+
+                <div class="result-title">
+
+
+                    <div class="small-blood-logo">
+                        <span></span>
+                    </div>
+
+
+                    <div>
+
+                        <h2>
+                            HASIL IDENTIFIKASI
+                        </h2>
+
+                        <p>
+                            GOLONGAN DARAH
+                        </p>
+
+                    </div>
+
+
+                </div>
+
+
+
+                <!-- HASIL GOLDAR -->
+
+                <div class="result-decoration">
+
+
+                    <div class="small-drop drop-one"></div>
+
+                    <div class="small-drop drop-two"></div>
+
+
+                    <div class="result-circle">
+
+                        <span id="resultBlood">
+                            A+
+                        </span>
+
+                    </div>
+
+
+                    <div class="small-drop drop-three"></div>
+
+
+                </div>
+
+
+            </div>
+
+
+
+            <!-- =================================================
+                 AKURASI
+            ================================================== -->
+
+            <div class="card accuracy-card">
+
+
+                <!-- JUDUL AKURASI -->
+
+                <div class="accuracy-title">
+
+
+                    <div class="accuracy-icon">
+
+                        <span></span>
+                        <span></span>
+                        <span></span>
+
+                    </div>
+
+
+                    <div>
+
+                        <h2>
+                            AKURASI
+                        </h2>
+
+                        <p>
+                            (CONFIDENCE)
+                        </p>
+
+                    </div>
+
+
+                </div>
+
+
+
+                <!-- LINGKARAN AKURASI -->
+
+                <div class="accuracy-ring">
+
+
+                    <svg
+                        viewBox="0 0 200 200"
+                        class="progress-ring"
+                    >
+
+
+                        <circle
+                            class="ring-background"
+                            cx="100"
+                            cy="100"
+                            r="78"
+                        />
+
+
+                        <circle
+                            id="accuracyCircle"
+                            class="ring-progress"
+                            cx="100"
+                            cy="100"
+                            r="78"
+                        />
+
+
+                    </svg>
+
+
+
+                    <div class="accuracy-number">
+
+                        <span id="accuracy">
+                            98
+                        </span>
+
+                        <small>
+                            %
+                        </small>
+
+                    </div>
+
+
+                </div>
+
+
+            </div>
+
+
+        </section>
+
+
+
+        <!-- =====================================================
+             PILIH GOLONGAN DARAH
+        ====================================================== -->
+
+        <section class="card blood-selection">
+
+
+            <!-- JUDUL -->
+
+            <div class="selection-title">
+
+                <span class="hand-icon">
+                    ☝
+                </span>
+
+                <h2>
+                    PILIH GOLONGAN DARAH
+                </h2>
+
+            </div>
+
+
+
+            <!-- PILIHAN GOLDAR + KIRIM -->
+
+            <div class="selection-content">
+
+
+                <!-- PILIHAN GOLDAR -->
+
+                <div
+                    class="blood-options"
+                    id="bloodButtons"
+                >
+
+
+                    <button
+                        class="blood-option selected"
+                        data-blood="A+"
+                    >
+                        A+
+                    </button>
+
+
+                    <button
+                        class="blood-option"
+                        data-blood="A-"
+                    >
+                        A-
+                    </button>
+
+
+                    <button
+                        class="blood-option"
+                        data-blood="AB+"
+                    >
+                        AB+
+                    </button>
+
+
+                    <button
+                        class="blood-option"
+                        data-blood="AB-"
+                    >
+                        AB-
+                    </button>
+
+
+                    <button
+                        class="blood-option"
+                        data-blood="B+"
+                    >
+                        B+
+                    </button>
+
+
+                    <button
+                        class="blood-option"
+                        data-blood="B-"
+                    >
+                        B-
+                    </button>
+
+
+                    <button
+                        class="blood-option"
+                        data-blood="O+"
+                    >
+                        O+
+                    </button>
+
+
+                    <button
+                        class="blood-option"
+                        data-blood="O-"
+                    >
+                        O-
+                    </button>
+
+
+                </div>
+
+
+
+                <!-- PEMBATAS -->
+
+                <div class="selection-divider"></div>
+
+
+
+                <!-- TOMBOL KIRIM -->
+
+                <button
+                    id="sendBtn"
+                    class="send-btn"
+                >
+
+                    <span class="send-icon">
+                        ➤
+                    </span>
+
+                    KIRIM
+
+                </button>
+
+
+            </div>
+
+
+        </section>
+
+
+
+        <!-- =====================================================
+             DATA RIWAYAT PASIEN
+        ====================================================== -->
+
+        <section class="card history-card">
+
+
+            <!-- HEADER RIWAYAT -->
+
+            <div class="history-header">
+
+
+                <div class="history-title">
+
+
+                    <div class="history-icon">
+                        ▤
+                    </div>
+
+
+                    <h2>
+                        DATA RIWAYAT PASIEN
+                    </h2>
+
+
+                </div>
+
+
+            </div>
+
+
+
+            <!-- TABLE -->
+
+            <div class="table-container">
+
+
+                <table>
+
+
+                    <thead>
+
+                        <tr>
+
+                            <th>
+                                NO
+                            </th>
+
+                            <th>
+                                ID PASIEN
+                            </th>
+
+                            <th>
+                                NAMA PASIEN
+                            </th>
+
+                            <th>
+                                GOL.DAR
+                            </th>
+
+                            <th>
+                                AKURASI
+                            </th>
+
+                            <th>
+                                TANGGAL & WAKTU
+                            </th>
+
+                        </tr>
+
+                    </thead>
+
+
+
+                    <tbody id="historyBody">
+
+
+                        <!-- DATA 1 -->
+
+                        <tr>
+
+                            <td>
+                                1
+                            </td>
+
+                            <td>
+                                P001
+                            </td>
+
+                            <td>
+                                ABCDRF
+                            </td>
+
+                            <td>
+
+                                <span class="blood-tag blood-a">
+                                    A+
+                                </span>
+
+                            </td>
+
+                            <td>
+                                98 %
+                            </td>
+
+                            <td>
+                                24/09/2026 22:10:15
+                            </td>
+
+                        </tr>
+
+
+
+                        <!-- DATA 2 -->
+
+                        <tr>
+
+                            <td>
+                                2
+                            </td>
+
+                            <td>
+                                P002
+                            </td>
+
+                            <td>
+                                EFGHIJ
+                            </td>
+
+                            <td>
+
+                                <span class="blood-tag blood-o">
+                                    O-
+                                </span>
+
+                            </td>
+
+                            <td>
+                                96 %
+                            </td>
+
+                            <td>
+                                24/09/2026 21:55:03
+                            </td>
+
+                        </tr>
+
+
+
+                        <!-- DATA 3 -->
+
+                        <tr>
+
+                            <td>
+                                3
+                            </td>
+
+                            <td>
+                                P003
+                            </td>
+
+                            <td>
+                                KLMNOP
+                            </td>
+
+                            <td>
+
+                                <span class="blood-tag blood-b">
+                                    B+
+                                </span>
+
+                            </td>
+
+                            <td>
+                                97 %
+                            </td>
+
+                            <td>
+                                24/09/2026 21:40:27
+                            </td>
+
+                        </tr>
+
+
+
+                        <!-- DATA 4 -->
+
+                        <tr>
+
+                            <td>
+                                4
+                            </td>
+
+                            <td>
+                                P004
+                            </td>
+
+                            <td>
+                                QRSTU
+                            </td>
+
+                            <td>
+
+                                <span class="blood-tag blood-ab">
+                                    AB-
+                                </span>
+
+                            </td>
+
+                            <td>
+                                95 %
+                            </td>
+
+                            <td>
+                                24/09/2026 21:21:10
+                            </td>
+
+                        </tr>
+
+
+
+                        <!-- DATA 5 -->
+
+                        <tr>
+
+                            <td>
+                                5
+                            </td>
+
+                            <td>
+                                P005
+                            </td>
+
+                            <td>
+                                VWXYZ
+                            </td>
+
+                            <td>
+
+                                <span class="blood-tag blood-a-minus">
+                                    A-
+                                </span>
+
+                            </td>
+
+                            <td>
+                                94 %
+                            </td>
+
+                            <td>
+                                24/09/2026 21:05:45
+                            </td>
+
+                        </tr>
+
+
+                    </tbody>
+
+
+                </table>
+
+
+            </div>
+
+
+        </section>
+
+
+    </main>
+
+
+
+    <!-- =====================================================
+         NOTIFICATION
+    ====================================================== -->
+
+    <div
+        id="toast"
+        class="toast"
+    ></div>
+
+
+
+    <!-- JAVASCRIPT -->
+
+    <script src="script.js"></script>
+
+
+</body>
+
+</html>
