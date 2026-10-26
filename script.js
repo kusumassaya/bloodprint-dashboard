@@ -1,603 +1,696 @@
-/* =========================================================
-   BLOODPRINT
-   SCRIPT.JS
-   ========================================================= */
+
+/* =====================================================
+   BLOODPRINT - FIREBASE + SIMULASI SCAN
+   ===================================================== */
+
+import { initializeApp } from
+  "https://www.gstatic.com/firebasejs/11.10.0/firebase-app.js";
+
+import {
+  getAuth,
+  onAuthStateChanged,
+  signInWithEmailAndPassword,
+  signOut
+} from
+  "https://www.gstatic.com/firebasejs/11.10.0/firebase-auth.js";
+
+import {
+  getDatabase,
+  ref,
+  push,
+  set,
+  onValue,
+  query,
+  limitToLast
+} from
+  "https://www.gstatic.com/firebasejs/11.10.0/firebase-database.js";
 
 
-/* =========================================================
-   ELEMENT DASHBOARD
-========================================================= */
+/* =====================================================
+   1. KONFIGURASI FIREBASE
+   ===================================================== */
+
+const firebaseConfig = {
+  apiKey: "AIzaSyAYIlqjnE9m2IhS6--67fwo4o7p2P6Rvto",
+  authDomain: "bloodprint-17e06.firebaseapp.com",
+  databaseURL:
+    "https://bloodprint-17e06-default-rtdb.asia-southeast1.firebasedatabase.app",
+  projectId: "bloodprint-17e06",
+  storageBucket: "bloodprint-17e06.firebasestorage.app",
+  messagingSenderId: "1072351451840",
+  appId: "1:1072351451840:web:b5db80d0a871c2c206eb25"
+};
+
+const app = initializeApp(firebaseConfig);
+const auth = getAuth(app);
+const db = getDatabase(app);
+
+
+/* =====================================================
+   2. ELEMEN DASHBOARD
+   ===================================================== */
 
 const bloodButtons =
-    document.querySelectorAll(".blood-option");
+  document.querySelectorAll(".blood-option");
 
 const resultBlood =
-    document.getElementById("resultBlood");
+  document.getElementById("resultBlood");
 
 const accuracy =
-    document.getElementById("accuracy");
+  document.getElementById("accuracy");
 
 const accuracyCircle =
-    document.getElementById("accuracyCircle");
+  document.getElementById("accuracyCircle");
 
 const toast =
-    document.getElementById("toast");
+  document.getElementById("toast");
 
 const scanButton =
-    document.getElementById("scanBtn");
+  document.getElementById("scanBtn");
 
 const sendButton =
-    document.getElementById("sendBtn");
+  document.getElementById("sendBtn");
 
 const patientIdInput =
-    document.getElementById("patientId");
+  document.getElementById("patientId");
 
 const patientNameInput =
-    document.getElementById("patientName");
+  document.getElementById("patientName");
+
+const historyBody =
+  document.getElementById("historyBody");
+
+const dateElement =
+  document.getElementById("date");
+
+const timeElement =
+  document.getElementById("time");
 
 
-/* =========================================================
-   VARIABEL
-========================================================= */
+/* =====================================================
+   3. VARIABEL
+   ===================================================== */
 
 let selectedBlood = "A+";
+let currentResult = null;
+let activeUser = null;
+let unsubscribeHistory = null;
 
 
-/* =========================================================
-   NOTIFICATION / TOAST
-========================================================= */
+/* =====================================================
+   4. NOTIFIKASI
+   ===================================================== */
 
 function showToast(message) {
+  if (!toast) {
+    alert(message);
+    return;
+  }
 
-    toast.textContent = message;
+  toast.textContent = message;
+  toast.classList.add("show");
 
-    toast.classList.add("show");
-
-
-    setTimeout(() => {
-
-        toast.classList.remove("show");
-
-    }, 2200);
-
+  setTimeout(() => {
+    toast.classList.remove("show");
+  }, 3000);
 }
 
 
-/* =========================================================
-   TANGGAL DAN WAKTU
-========================================================= */
+/* =====================================================
+   5. TANGGAL DAN WAKTU
+   ===================================================== */
 
 function updateDateTime() {
+  const now = new Date();
 
-    const now = new Date();
+  if (dateElement) {
+    dateElement.textContent =
+      new Intl.DateTimeFormat("id-ID", {
+        day: "2-digit",
+        month: "long",
+        year: "numeric"
+      }).format(now);
+  }
 
-
-    /* =========================
-       TANGGAL
-    ========================= */
-
-    const date =
-        String(
-            now.getDate()
-        ).padStart(2, "0");
-
-
-    const monthNames = [
-
-        "Januari",
-        "Februari",
-        "Maret",
-        "April",
-        "Mei",
-        "Juni",
-        "Juli",
-        "Agustus",
-        "September",
-        "Oktober",
-        "November",
-        "Desember"
-
-    ];
-
-
-    const month =
-        monthNames[
-            now.getMonth()
-        ];
-
-
-    const year =
-        now.getFullYear();
-
-
-    /*
-       Hanya tanggal.
-
-       Tidak menampilkan:
-       Senin / Selasa / Rabu / dst.
-    */
-
-    document.getElementById(
-        "date"
-    ).textContent =
-        `${date} ${month} ${year}`;
-
-
-    /* =========================
-       JAM
-    ========================= */
-
-    const hours =
-        String(
-            now.getHours()
-        ).padStart(2, "0");
-
-
-    const minutes =
-        String(
-            now.getMinutes()
-        ).padStart(2, "0");
-
-
-    const seconds =
-        String(
-            now.getSeconds()
-        ).padStart(2, "0");
-
-
-    document.getElementById(
-        "time"
-    ).textContent =
-        `${hours}:${minutes}:${seconds}`;
-
+  if (timeElement) {
+    timeElement.textContent =
+      now.toLocaleTimeString("id-ID", {
+        hour12: false
+      });
+  }
 }
-
-
-/*
-   Jalankan setiap 1 detik
-*/
-
-setInterval(
-    updateDateTime,
-    1000
-);
-
-
-/*
-   Jalankan pertama kali
-*/
 
 updateDateTime();
+setInterval(updateDateTime, 1000);
 
 
-
-/* =========================================================
-   ACCURACY RING
-========================================================= */
+/* =====================================================
+   6. AKURASI
+   ===================================================== */
 
 function setAccuracy(value) {
+  const safeValue = Math.max(0, Math.min(100, value));
 
-    /*
-       Pastikan nilai berada
-       antara 0 sampai 100.
-    */
+  if (accuracy) {
+    accuracy.textContent = safeValue;
+  }
 
-    value =
-        Math.max(
-            0,
-            Math.min(
-                100,
-                value
-            )
-        );
-
-
-    /*
-       Tampilkan angka
-    */
-
-    accuracy.textContent =
-        value;
-
-
-    /*
-       Radius lingkaran SVG
-    */
-
+  if (accuracyCircle) {
     const radius = 78;
+    const circumference = 2 * Math.PI * radius;
 
-
-    /*
-       Keliling lingkaran
-    */
-
-    const circumference =
-        2 *
-        Math.PI *
-        radius;
-
-
-    /*
-       Hitung bagian yang terisi
-    */
-
-    const progress =
-        circumference *
-        (value / 100);
-
-
-    /*
-       Terapkan ke lingkaran
-    */
-
-    accuracyCircle.style.strokeDasharray =
-        circumference;
-
-
+    accuracyCircle.style.strokeDasharray = circumference;
     accuracyCircle.style.strokeDashoffset =
-        circumference -
-        progress;
-
+      circumference * (1 - safeValue / 100);
+  }
 }
-
-
-/*
-   Nilai awal
-*/
 
 setAccuracy(98);
 
 
+/* =====================================================
+   7. FORM LOGIN FIREBASE
+   ===================================================== */
 
-/* =========================================================
-   PILIH GOLONGAN DARAH
-========================================================= */
+function createLoginScreen() {
+  if (document.getElementById("firebaseLoginScreen")) {
+    return;
+  }
 
-bloodButtons.forEach(
-    button => {
+  const style = document.createElement("style");
 
-
-        button.addEventListener(
-            "click",
-            () => {
-
-
-                /*
-                   Hapus selected
-                   dari semua tombol
-                */
-
-                bloodButtons.forEach(
-                    item => {
-
-                        item.classList.remove(
-                            "selected"
-                        );
-
-                    }
-                );
-
-
-                /*
-                   Aktifkan tombol
-                   yang ditekan
-                */
-
-                button.classList.add(
-                    "selected"
-                );
-
-
-                /*
-                   Simpan golongan darah
-                */
-
-                selectedBlood =
-                    button.dataset.blood;
-
-
-                /*
-                   Notifikasi
-                */
-
-                showToast(
-                    `Golongan ${selectedBlood} dipilih`
-                );
-
-            }
-        );
-
+  style.textContent = `
+    #firebaseLoginScreen {
+      position: fixed;
+      inset: 0;
+      z-index: 99999;
+      background: #f4f7fb;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 20px;
+      font-family: Arial, sans-serif;
     }
-);
 
-
-
-/* =========================================================
-   MULAI SCAN
-========================================================= */
-
-scanButton.addEventListener(
-    "click",
-    () => {
-
-
-        /* =========================
-           AMBIL DATA PASIEN
-        ========================= */
-
-        const patientId =
-            patientIdInput
-                .value
-                .trim();
-
-
-        const patientName =
-            patientNameInput
-                .value
-                .trim();
-
-
-
-        /* =========================
-           VALIDASI
-        ========================= */
-
-        if (
-            patientId === "" ||
-            patientName === ""
-        ) {
-
-            showToast(
-                "Masukkan ID dan nama pasien terlebih dahulu"
-            );
-
-            return;
-
-        }
-
-
-
-        /* =========================
-           UBAH STATUS BUTTON
-        ========================= */
-
-        scanButton.disabled =
-            true;
-
-
-        /*
-           Ambil teks
-           "MULAI SCAN"
-        */
-
-        const scanText =
-            scanButton.querySelector(
-                "span:nth-child(2)"
-            );
-
-
-        scanText.textContent =
-            "MENGIDENTIFIKASI...";
-
-
-
-        /* =================================================
-           SIMULASI PROSES CNN
-           
-           SEMENTARA:
-           Hasil       = A+
-           Confidence  = 98%
-
-           Nanti bagian ini dapat
-           diganti dengan hasil CNN
-           sebenarnya.
-        ================================================== */
-
-        setTimeout(
-            () => {
-
-
-                /*
-                   HASIL CNN SEMENTARA
-                */
-
-                const cnnResult =
-                    "A+";
-
-
-                /*
-                   CONFIDENCE SEMENTARA
-                */
-
-                const cnnConfidence =
-                    98;
-
-
-
-                /* =========================
-                   TAMPILKAN HASIL
-                ========================= */
-
-                resultBlood.textContent =
-                    cnnResult;
-
-
-                setAccuracy(
-                    cnnConfidence
-                );
-
-
-
-                /* =========================
-                   SIMPAN GOLDAR
-                ========================= */
-
-                selectedBlood =
-                    cnnResult;
-
-
-
-                /* =========================
-                   OTOMATIS PILIH
-                   HASIL IDENTIFIKASI
-                ========================= */
-
-                bloodButtons.forEach(
-                    button => {
-
-                        if (
-                            button.dataset.blood ===
-                            cnnResult
-                        ) {
-
-                            button.classList.add(
-                                "selected"
-                            );
-
-                        } else {
-
-                            button.classList.remove(
-                                "selected"
-                            );
-
-                        }
-
-                    }
-                );
-
-
-
-                /* =========================
-                   KEMBALIKAN BUTTON
-                ========================= */
-
-                scanButton.disabled =
-                    false;
-
-
-                scanText.textContent =
-                    "MULAI SCAN";
-
-
-
-                /* =========================
-                   NOTIFIKASI
-                ========================= */
-
-                showToast(
-                    `Identifikasi selesai: ${cnnResult}`
-                );
-
-
-            },
-
-            1200
-
-        );
-
+    #firebaseLoginScreen .login-card {
+      width: 100%;
+      max-width: 390px;
+      background: white;
+      border-radius: 16px;
+      padding: 30px;
+      box-shadow: 0 8px 35px rgba(0,0,0,.12);
     }
-);
+
+    #firebaseLoginScreen h2 {
+      margin-top: 0;
+      color: #b91c32;
+    }
+
+    #firebaseLoginScreen input {
+      box-sizing: border-box;
+      display: block;
+      width: 100%;
+      padding: 12px;
+      margin: 12px 0;
+      border: 1px solid #cbd5e1;
+      border-radius: 8px;
+      font-size: 14px;
+    }
+
+    #firebaseLoginScreen button {
+      width: 100%;
+      padding: 13px;
+      border: 0;
+      border-radius: 8px;
+      background: #b91c32;
+      color: white;
+      font-weight: bold;
+      cursor: pointer;
+    }
+
+    #firebaseLoginMessage {
+      color: #b91c32;
+      font-size: 13px;
+      margin-top: 12px;
+      overflow-wrap: anywhere;
+    }
+
+    #firebaseLoginScreen .login-subtitle {
+      color: #64748b;
+      font-size: 14px;
+      line-height: 1.5;
+    }
+  `;
+
+  document.head.appendChild(style);
+
+  const screen = document.createElement("div");
+  screen.id = "firebaseLoginScreen";
+
+  screen.innerHTML = `
+    <form class="login-card" id="firebaseLoginForm">
+      <h2>BLOODPRINT</h2>
+      <p class="login-subtitle">
+        Login untuk mengakses dashboard dan database.
+      </p>
+
+      <label for="firebaseEmail">Email</label>
+      <input
+        id="firebaseEmail"
+        type="email"
+        autocomplete="username"
+        placeholder="Email akun Firebase"
+        required
+      >
+
+      <label for="firebasePassword">Password</label>
+      <input
+        id="firebasePassword"
+        type="password"
+        autocomplete="current-password"
+        placeholder="Password akun Firebase"
+        required
+      >
+
+      <button id="firebaseLoginButton" type="submit">
+        LOGIN
+      </button>
+
+      <div id="firebaseLoginMessage" role="status"></div>
+    </form>
+  `;
+
+  document.body.appendChild(screen);
+
+  const form = document.getElementById("firebaseLoginForm");
+  const message = document.getElementById("firebaseLoginMessage");
+  const loginButton = document.getElementById("firebaseLoginButton");
+
+  form.addEventListener("submit", async (event) => {
+    event.preventDefault();
+
+    const email =
+      document.getElementById("firebaseEmail").value.trim();
+
+    const password =
+      document.getElementById("firebasePassword").value;
+
+    loginButton.disabled = true;
+    loginButton.textContent = "MEMERIKSA...";
+    message.textContent = "";
+
+    try {
+      await signInWithEmailAndPassword(auth, email, password);
+    } catch (error) {
+      console.error("Login Firebase:", error);
+
+      message.textContent =
+        error.code === "auth/invalid-credential"
+          ? "Email atau password salah."
+          : error.code === "auth/too-many-requests"
+          ? "Terlalu banyak percobaan. Coba lagi nanti."
+          : "Login gagal: " + error.message;
+    } finally {
+      loginButton.disabled = false;
+      loginButton.textContent = "LOGIN";
+    }
+  });
+}
 
 
+/* =====================================================
+   8. STATUS LOGIN DAN LOGOUT
+   ===================================================== */
 
-/* =========================================================
-   KIRIM KE HARDWARE
-========================================================= */
+function updateAccountInfo(user) {
+  let accountBox = document.getElementById("firebaseAccountBox");
 
-sendButton.addEventListener(
-    "click",
-    () => {
+  if (!accountBox) {
+    accountBox = document.createElement("div");
+    accountBox.id = "firebaseAccountBox";
+
+    Object.assign(accountBox.style, {
+      position: "fixed",
+      right: "12px",
+      bottom: "12px",
+      zIndex: "1000",
+      background: "white",
+      padding: "10px 12px",
+      borderRadius: "8px",
+      boxShadow: "0 2px 12px rgba(0,0,0,.15)",
+      font: "12px Arial, sans-serif",
+      display: "flex",
+      alignItems: "center",
+      gap: "10px",
+      maxWidth: "calc(100vw - 24px)"
+    });
+
+    document.body.appendChild(accountBox);
+  }
+
+  accountBox.replaceChildren();
+
+  const label = document.createElement("span");
+  label.textContent = "Login: " + user.email;
+  label.style.overflowWrap = "anywhere";
+
+  const logoutButton = document.createElement("button");
+  logoutButton.textContent = "Keluar";
+
+  Object.assign(logoutButton.style, {
+    border: "0",
+    background: "#b91c32",
+    color: "white",
+    padding: "7px 10px",
+    borderRadius: "6px",
+    cursor: "pointer"
+  });
+
+  logoutButton.addEventListener("click", async () => {
+    try {
+      await signOut(auth);
+      showToast("Kamu sudah logout.");
+    } catch (error) {
+      console.error(error);
+      showToast("Logout gagal.");
+    }
+  });
+
+  accountBox.append(label, logoutButton);
+}
 
 
-        /* =========================
-           CEK GOLDAR
-        ========================= */
+/* =====================================================
+   9. PILIH GOLONGAN DARAH
+   ===================================================== */
 
-        if (
-            !selectedBlood
-        ) {
+bloodButtons.forEach((button) => {
+  button.addEventListener("click", () => {
+    bloodButtons.forEach((item) =>
+      item.classList.remove("selected")
+    );
 
-            showToast(
-                "Pilih golongan darah terlebih dahulu"
-            );
+    button.classList.add("selected");
+    selectedBlood = button.dataset.blood;
 
-            return;
-
-        }
-
-
-
-        /* =========================
-           DISABLE BUTTON
-        ========================= */
-
-        sendButton.disabled =
-            true;
+    showToast("Golongan " + selectedBlood + " dipilih.");
+  });
+});
 
 
+/* =====================================================
+   10. SIMULASI SCAN
+   ===================================================== */
 
-        /* =========================
-           UBAH TAMPILAN BUTTON
-        ========================= */
+if (scanButton) {
+  scanButton.addEventListener("click", async () => {
+    if (!activeUser) {
+      showToast("Login Firebase terlebih dahulu.");
+      return;
+    }
 
-        sendButton.innerHTML = `
+    const patientId = patientIdInput.value.trim();
+    const patientName = patientNameInput.value.trim();
 
-            <span class="send-icon">
-                ➤
+    if (!patientId || !patientName) {
+      showToast("Masukkan ID dan nama pasien terlebih dahulu.");
+      return;
+    }
+
+    scanButton.disabled = true;
+
+    const scanText = scanButton.querySelector("span:nth-child(2)");
+
+    if (scanText) {
+      scanText.textContent = "MENGIDENTIFIKASI...";
+    }
+
+    try {
+      await new Promise((resolve) => setTimeout(resolve, 1200));
+
+      // HASIL SIMULASI, BUKAN PREDIKSI CNN ASLI
+      const cnnResult = "A+";
+      const cnnConfidence = 98;
+
+      resultBlood.textContent = cnnResult;
+      setAccuracy(cnnConfidence);
+
+      selectedBlood = cnnResult;
+
+      bloodButtons.forEach((button) => {
+        button.classList.toggle(
+          "selected",
+          button.dataset.blood === cnnResult
+        );
+      });
+
+      currentResult = {
+        patientId,
+        patientName,
+        bloodGroup: cnnResult,
+        confidence: cnnConfidence,
+        source: "SIMULATION",
+        createdAt: Date.now(),
+        createdAtText: new Date().toLocaleString("id-ID")
+      };
+
+      const resultPatient =
+        document.getElementById("resultPatient");
+
+      if (resultPatient) {
+        resultPatient.textContent =
+          patientName + " (" + patientId + ")";
+      }
+
+      showToast(
+        "Simulasi selesai: " +
+        cnnResult +
+        " (" + cnnConfidence + "%). Tekan KIRIM untuk menyimpan."
+      );
+
+    } catch (error) {
+      console.error(error);
+      showToast("Simulasi gagal.");
+    } finally {
+      scanButton.disabled = false;
+
+      if (scanText) {
+        scanText.textContent = "MULAI SCAN";
+      }
+    }
+  });
+}
+
+
+/* =====================================================
+   11. KIRIM / SIMPAN HASIL KE FIREBASE
+   ===================================================== */
+
+if (sendButton) {
+  sendButton.addEventListener("click", async () => {
+    if (!activeUser) {
+      showToast("Login Firebase terlebih dahulu.");
+      return;
+    }
+
+    if (!currentResult) {
+      showToast("Lakukan simulasi scan terlebih dahulu.");
+      return;
+    }
+
+    sendButton.disabled = true;
+    sendButton.textContent = "MENYIMPAN...";
+
+    try {
+      const historyRef = ref(
+        db,
+        "results/" + activeUser.uid
+      );
+
+      const newRecordRef = push(historyRef);
+
+      await set(newRecordRef, {
+        ...currentResult,
+        bloodGroup: selectedBlood,
+        savedAt: Date.now()
+      });
+
+      showToast("Hasil berhasil disimpan ke Firebase.");
+
+      currentResult = null;
+
+    } catch (error) {
+      console.error("Gagal menyimpan data:", error);
+
+      showToast(
+        "Gagal menyimpan data. Periksa koneksi dan Rules Firebase."
+      );
+    } finally {
+      sendButton.disabled = false;
+
+      sendButton.innerHTML = `
+        <span class="send-icon">➤</span>
+        KIRIM
+      `;
+    }
+  });
+}
+
+
+/* =====================================================
+   12. RIWAYAT PASIEN DARI FIREBASE
+   ===================================================== */
+
+function escapeHTML(value) {
+  return String(value ?? "").replace(/[&<>"']/g, (char) => ({
+    "&": "&amp;",
+    "<": "&lt;",
+    ">": "&gt;",
+    '"': "&quot;",
+    "'": "&#39;"
+  })[char]);
+}
+
+function getBloodClass(blood) {
+  const classes = {
+    "A+": "blood-a",
+    "A-": "blood-a-minus",
+    "AB+": "blood-ab",
+    "AB-": "blood-ab",
+    "B+": "blood-b",
+    "B-": "blood-b",
+    "O+": "blood-o",
+    "O-": "blood-o"
+  };
+
+  return classes[blood] || "";
+}
+
+function renderHistory(records) {
+  if (!historyBody) return;
+
+  if (records.length === 0) {
+    historyBody.innerHTML = `
+      <tr>
+        <td colspan="6">Belum ada data tersimpan di Firebase.</td>
+      </tr>
+    `;
+    return;
+  }
+
+  historyBody.innerHTML = records
+    .map((record, index) => {
+      const date = new Date(
+        Number(record.createdAt || record.savedAt || Date.now())
+      ).toLocaleString("id-ID");
+
+      return `
+        <tr>
+          <td>${index + 1}</td>
+          <td>${escapeHTML(record.patientId)}</td>
+          <td>${escapeHTML(record.patientName)}</td>
+          <td>
+            <span class="blood-tag ${getBloodClass(record.bloodGroup)}">
+              ${escapeHTML(record.bloodGroup)}
             </span>
+          </td>
+          <td>${escapeHTML(record.confidence)}%</td>
+          <td>${escapeHTML(date)}</td>
+        </tr>
+      `;
+    })
+    .join("");
+}
 
-            MENGIRIM...
+function listenToHistory(user) {
+  if (unsubscribeHistory) {
+    unsubscribeHistory();
+    unsubscribeHistory = null;
+  }
 
-        `;
+  const historyRef = query(
+    ref(db, "results/" + user.uid),
+    limitToLast(100)
+  );
 
+  unsubscribeHistory = onValue(
+    historyRef,
+    (snapshot) => {
+      const records = [];
 
+      snapshot.forEach((child) => {
+        records.push({
+          id: child.key,
+          ...child.val()
+        });
+      });
 
-        /* =================================================
-           SIMULASI KOMUNIKASI HARDWARE
+      records.sort(
+        (a, b) =>
+          Number(b.createdAt || b.savedAt || 0) -
+          Number(a.createdAt || a.savedAt || 0)
+      );
 
-           NANTI BAGIAN INI DIGANTI
-           DENGAN KOMUNIKASI WI-FI
-           KE ESP32.
-        ================================================== */
+      renderHistory(records);
 
-        setTimeout(
-            () => {
+      const historyInfo =
+        document.getElementById("historyInfo");
 
-
-                /* =========================
-                   NOTIFIKASI
-                ========================= */
-
-                showToast(
-                    `Golongan ${selectedBlood} berhasil dikirim`
-                );
-
-
-
-                /* =========================
-                   KEMBALIKAN BUTTON
-                ========================= */
-
-                sendButton.disabled =
-                    false;
-
-
-                sendButton.innerHTML = `
-
-                    <span class="send-icon">
-                        ➤
-                    </span>
-
-                    KIRIM
-
-                `;
-
-
-            },
-
-            1000
-
-        );
-
+      if (historyInfo) {
+        historyInfo.textContent =
+          "Menampilkan " + records.length + " data dari Firebase";
+      }
+    },
+    (error) => {
+      console.error("Gagal membaca riwayat:", error);
+      showToast("Riwayat gagal dibaca. Periksa Rules Firebase.");
     }
-);
+  );
+}
+
+
+/* =====================================================
+   13. STATUS AUTENTIKASI
+   ===================================================== */
+
+createLoginScreen();
+
+onAuthStateChanged(auth, (user) => {
+  activeUser = user;
+
+  const loginScreen =
+    document.getElementById("firebaseLoginScreen");
+
+  if (user) {
+    if (loginScreen) {
+      loginScreen.remove();
+    }
+
+    updateAccountInfo(user);
+    listenToHistory(user);
+
+    showToast("Login Firebase berhasil.");
+  } else {
+    if (unsubscribeHistory) {
+      unsubscribeHistory();
+      unsubscribeHistory = null;
+    }
+
+    const accountBox =
+      document.getElementById("firebaseAccountBox");
+
+    if (accountBox) {
+      accountBox.remove();
+    }
+
+    if (historyBody) {
+      historyBody.innerHTML = `
+        <tr>
+          <td colspan="6">Login untuk melihat riwayat pasien.</td>
+        </tr>
+      `;
+    }
+
+    createLoginScreen();
+  }
+});
