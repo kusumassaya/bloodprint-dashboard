@@ -1,6 +1,6 @@
 
 /* =====================================================
-   BLOODPRINT - FIREBASE + SIMULASI SCAN
+   BLOODPRINT - FIREBASE + SIMULASI SCAN 
    ===================================================== */
 
 import { initializeApp } from 
